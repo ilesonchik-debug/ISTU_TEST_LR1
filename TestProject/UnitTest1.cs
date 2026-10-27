@@ -32,6 +32,81 @@ namespace TestProject
 
                     string[] fields = line.Split(';');
 
+                    string values = fields[2].Trim()
+                        .TrimStart('[').TrimEnd(']');
+
+                    double[] numbers = string.IsNullOrWhiteSpace(values)
+                        ? Array.Empty<double>()
+                        : values.Split(',')
+                            .Select(x => double.Parse(
+                                x.Trim(), CultureInfo.InvariantCulture))
+                            .ToArray();
+
+                    int expectedCount = int.Parse(
+                        fields[3], CultureInfo.InvariantCulture);
+
+                    double expectedSum = double.Parse(
+                        fields[4], CultureInfo.InvariantCulture);
+
+                    yield return new object[]
+                    {
+                        numbers, expectedCount, expectedSum
+                    };
+                }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(CsvCases))]
+        public void Analyze_CsvCases_ReturnsExpectedResults(
+            double[] numbers,
+            int expectedCount,
+            double expectedSum)
+        {
+            var result = ArrayAnalyzer.Analyze(numbers);
+
+            Assert.Equal(expectedCount, result.Count);
+            Assert.Equal(expectedSum, result.Sum);
+        }
+    }
+}
+
+/*
+
+// убираю предупреждение проверки csv 
+
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using ClassLibrary;
+using Xunit;
+
+namespace TestProject
+{
+    public class UnitTest1
+    {
+        public static IEnumerable<object[]> CsvCases
+        {
+            get
+            {
+                string path = Path.Combine(
+                    AppContext.BaseDirectory,
+                    "TestData",
+                    "test_results.csv");
+
+                if (!File.Exists(path))
+                    throw new FileNotFoundException(
+                        "Не найден CSV-файл с тестовыми данными.", path);
+
+                foreach (string line in File.ReadLines(path).Skip(1))
+                {
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    string[] fields = line.Split(';');
+
                     string testId = fields[0];
                     string group = fields[1];
                     string values = fields[2].Trim()
@@ -74,6 +149,8 @@ namespace TestProject
         }
     }
 }
+
+*/
 
 
 /*
