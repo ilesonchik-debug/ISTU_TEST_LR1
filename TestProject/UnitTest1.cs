@@ -1,5 +1,6 @@
 
 
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -32,44 +33,76 @@ namespace TestProject
 
                     string[] fields = line.Split(';');
 
-                    string values = fields[2].Trim()
-                        .TrimStart('[').TrimEnd(']');
-
-                    double[] numbers = string.IsNullOrWhiteSpace(values)
-                        ? Array.Empty<double>()
-                        : values.Split(',')
-                            .Select(x => double.Parse(
-                                x.Trim(), CultureInfo.InvariantCulture))
-                            .ToArray();
-
-                    int expectedCount = int.Parse(
-                        fields[3], CultureInfo.InvariantCulture);
-
-                    double expectedSum = double.Parse(
-                        fields[4], CultureInfo.InvariantCulture);
+                    double[] numbers = ParseDoubles(fields[2]);
+                    int[] expectedIndices = ParseInts(fields[3]);
+                    double[] expectedValues = ParseDoubles(fields[4]);
 
                     yield return new object[]
                     {
-                        numbers, expectedCount, expectedSum
+                        fields[0],
+                        numbers,
+                        expectedIndices,
+                        expectedValues
                     };
                 }
             }
         }
 
+        private static double[] ParseDoubles(string text)
+        {
+            string values = text.Trim()
+                .TrimStart('[').TrimEnd(']');
+
+            if (string.IsNullOrWhiteSpace(values))
+                return Array.Empty<double>();
+
+            return values.Split(',')
+                .Select(x => double.Parse(
+                    x.Trim(), CultureInfo.InvariantCulture))
+                .ToArray();
+        }
+
+        private static int[] ParseInts(string text)
+        {
+            string values = text.Trim()
+                .TrimStart('[').TrimEnd(']');
+
+            if (string.IsNullOrWhiteSpace(values))
+                return Array.Empty<int>();
+
+            return values.Split(',')
+                .Select(x => int.Parse(
+                    x.Trim(), CultureInfo.InvariantCulture))
+                .ToArray();
+        }
+
         [Theory]
         [MemberData(nameof(CsvCases))]
         public void Analyze_CsvCases_ReturnsExpectedResults(
+            string testId,
             double[] numbers,
-            int expectedCount,
-            double expectedSum)
+            int[] expectedIndices,
+            double[] expectedValues)
         {
             var result = ArrayAnalyzer.Analyze(numbers);
 
-            Assert.Equal(expectedCount, result.Count);
-            Assert.Equal(expectedSum, result.Sum);
+            Assert.True(
+                expectedIndices.SequenceEqual(
+                    result.Select(x => x.Index)),
+                $"Тест {testId}: неверные индексы. " +
+                $"Ожидалось [{string.Join(", ", expectedIndices)}], " +
+                $"получено [{string.Join(", ", result.Select(x => x.Index))}]");
+
+            Assert.True(
+                expectedValues.SequenceEqual(
+                    result.Select(x => x.Value)),
+                $"Тест {testId}: неверные значения. " +
+                $"Ожидалось [{string.Join(", ", expectedValues)}], " +
+                $"получено [{string.Join(", ", result.Select(x => x.Value))}]");
         }
     }
 }
+
 
 /*
 
