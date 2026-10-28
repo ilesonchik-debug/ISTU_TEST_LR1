@@ -34,15 +34,13 @@ namespace TestProject
                     string[] fields = line.Split(';');
 
                     double[] numbers = ParseDoubles(fields[2]);
-                    int[] expectedIndices = ParseInts(fields[3]);
-                    double[] expectedValues = ParseDoubles(fields[4]);
+                    var expected = ParseExpectedPairs(fields[3]);
 
                     yield return new object[]
                     {
                         fields[0],
                         numbers,
-                        expectedIndices,
-                        expectedValues
+                        expected
                     };
                 }
             }
@@ -62,18 +60,31 @@ namespace TestProject
                 .ToArray();
         }
 
-        private static int[] ParseInts(string text)
+        private static (int Index1, double Value1, int Index2, double Value2)[]
+            ParseExpectedPairs(string text)
         {
+            var result = new List<(int Index1, double Value1, int Index2, double Value2)>();
+
             string values = text.Trim()
                 .TrimStart('[').TrimEnd(']');
 
             if (string.IsNullOrWhiteSpace(values))
-                return Array.Empty<int>();
+                return result.ToArray();
 
-            return values.Split(',')
-                .Select(x => int.Parse(
-                    x.Trim(), CultureInfo.InvariantCulture))
-                .ToArray();
+            foreach (string item in values.Split("),"))
+            {
+                string pair = item.Trim().Trim('(', ')');
+                string[] parts = pair.Split(',');
+
+                result.Add((
+                    int.Parse(parts[0].Trim(), CultureInfo.InvariantCulture),
+                    double.Parse(parts[1].Trim(), CultureInfo.InvariantCulture),
+                    int.Parse(parts[2].Trim(), CultureInfo.InvariantCulture),
+                    double.Parse(parts[3].Trim(), CultureInfo.InvariantCulture)
+                ));
+            }
+
+            return result.ToArray();
         }
 
         [Theory]
@@ -81,24 +92,15 @@ namespace TestProject
         public void Analyze_CsvCases_ReturnsExpectedResults(
             string testId,
             double[] numbers,
-            int[] expectedIndices,
-            double[] expectedValues)
+            (int Index1, double Value1, int Index2, double Value2)[] expected)
         {
-            var result = ArrayAnalyzer.Analyze(numbers);
+            var actual = ArrayAnalyzer.Analyze(numbers);
 
             Assert.True(
-                expectedIndices.SequenceEqual(
-                    result.Select(x => x.Index)),
-                $"Тест {testId}: неверные индексы. " +
-                $"Ожидалось [{string.Join(", ", expectedIndices)}], " +
-                $"получено [{string.Join(", ", result.Select(x => x.Index))}]");
-
-            Assert.True(
-                expectedValues.SequenceEqual(
-                    result.Select(x => x.Value)),
-                $"Тест {testId}: неверные значения. " +
-                $"Ожидалось [{string.Join(", ", expectedValues)}], " +
-                $"получено [{string.Join(", ", result.Select(x => x.Value))}]");
+                expected.SequenceEqual(actual),
+                $"Тест {testId}: неверный результат.\n" +
+                $"Ожидалось: [{string.Join(", ", expected)}]\n" +
+                $"Получено: [{string.Join(", ", actual)}]");
         }
     }
 }

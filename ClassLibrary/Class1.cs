@@ -1,30 +1,21 @@
 ﻿
-// 4 вариант
+// 29 вариант
 
 namespace ClassLibrary
 {
     public static class ArrayAnalyzer
     {
-        public static (int Index, double Value)[] Analyze(double[] numbers)
+        public static (int Index1, double Value1, int Index2, double Value2)[] Analyze(double[] numbers)
         {
-            var result = new System.Collections.Generic.List<(int Index, double Value)>();
+            var result = new System.Collections.Generic.List<(int Index1, double Value1, int Index2, double Value2)>();
 
-            for (int i = 0; i < numbers.Length; i++)
+            for (int i = 0; i < numbers.Length - 1; i++)
             {
-                double number = numbers[i];
-                if (number >= 0) continue;
+                double first = numbers[i];
+                double second = numbers[i + 1];
 
-                string digits = Math.Abs(number).ToString("0.################", System.Globalization.CultureInfo.InvariantCulture);
-                int sum = 0;
-
-                foreach (char c in digits)
-                {
-                    if (char.IsDigit(c))
-                        sum += c - '0';
-                }
-
-                if (sum % 2 == 0)
-                    result.Add((i, number));
+                if (first % 3 == 0 && second < 0)
+                    result.Add((i, first, i + 1, second));
             }
 
             return result.ToArray();
